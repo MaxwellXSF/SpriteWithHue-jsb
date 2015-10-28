@@ -7,10 +7,6 @@
 #include "spidermonkey_specifics.h"
 #include "ScriptingCore.h"
 
-JSClass  *jsb_sj_Test_class;
-JSObject *jsb_sj_Test_prototype;
-
-/*
 template<class T>
 static bool dummy_constructor(JSContext *cx, uint32_t argc, jsval *vp) {
 	JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
@@ -42,7 +38,7 @@ static bool dummy_constructor(JSContext *cx, uint32_t argc, jsval *vp) {
 
 static bool empty_constructor(JSContext *cx, uint32_t argc, jsval *vp) {
 	return false;
-}*/
+}
 
 static bool js_is_native_obj(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -50,6 +46,9 @@ static bool js_is_native_obj(JSContext *cx, uint32_t argc, jsval *vp)
 	args.rval().setBoolean(true);
 	return true;
 }
+
+JSClass  *jsb_sj_Test_class;
+JSObject *jsb_sj_Test_prototype;
 
 bool js_sj_Test_init(JSContext *cx, uint32_t argc, jsval *vp)
 {
@@ -224,7 +223,6 @@ void js_register_sj_Test(JSContext *cx, JS::HandleObject global) {
 JSClass  *jsb_sj_SpriteWithHue_class;
 JSObject *jsb_sj_SpriteWithHue_prototype;
 
-
 bool js_sj_SpriteWithHue_create(JSContext *cx, uint32_t argc, jsval *vp)
 {
 	JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
@@ -247,7 +245,33 @@ bool js_sj_SpriteWithHue_create(JSContext *cx, uint32_t argc, jsval *vp)
 		args.rval().set(jsret);
 		return true;
 	}
-	JS_ReportError(cx, "js_sj_SpriteWithHue_create : wrong number of arguments");
+	JS_ReportError(cx, "js_sj_SpriteWithHue_create : wrong number of arguments: %d, was expecting %d", argc, 1);
+	return false;
+}
+
+bool js_sj_SpriteWithHue_createWithSpriteFrameName(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+	if (argc == 1) {
+
+		std::string data;
+		jsval_to_std_string(cx, args.get(0), &data);
+
+		sj::SpriteWithHue* ret = sj::SpriteWithHue::createWithSpriteFrameName(data);
+		jsval jsret = JSVAL_NULL;
+		do {
+			if (ret) {
+				js_proxy_t *jsProxy = js_get_or_create_proxy<sj::SpriteWithHue>(cx, (sj::SpriteWithHue*)ret);
+				jsret = OBJECT_TO_JSVAL(jsProxy->obj);
+			}
+			else {
+				jsret = JSVAL_NULL;
+			}
+		} while (0);
+		args.rval().set(jsret);
+		return true;
+	}
+	JS_ReportError(cx, "js_sj_SpriteWithHue_createWithSpriteFrameName : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return false;
 }
 
@@ -269,7 +293,7 @@ bool js_sj_SpriteWithHue_setPosition(JSContext *cx, uint32_t argc, jsval *vp)
 		return true;
 	}
 
-	JS_ReportError(cx, "js_sj_Test_argcTest1 : wrong number of arguments: %d, was expecting %d", argc, 0);
+	JS_ReportError(cx, "js_sj_SpriteWithHue_setPosition : wrong number of arguments: %d, was expecting %d", argc, 2);
 	return false;
 }
 
@@ -290,7 +314,46 @@ bool js_sj_SpriteWithHue_setHue(JSContext *cx, uint32_t argc, jsval *vp)
 		return true;
 	}
 
-	JS_ReportError(cx, "js_sj_Test_argcTest1 : wrong number of arguments: %d, was expecting %d", argc, 0);
+	JS_ReportError(cx, "js_sj_SpriteWithHue_setHue : wrong number of arguments: %d, was expecting %d", argc, 1);
+	return false;
+}
+
+bool js_sj_SpriteWithHue_runAction(JSContext *cx, uint32_t argc, jsval *vp)
+{
+	JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+	bool ok = true;
+	JS::RootedObject obj(cx, args.thisv().toObjectOrNull());
+	js_proxy_t *proxy = jsb_get_js_proxy(obj);
+	sj::SpriteWithHue* cobj = (sj::SpriteWithHue *)(proxy ? proxy->ptr : NULL);
+	JSB_PRECONDITION2(cobj, cx, false, "js_cocos2dx_Node_runAction : Invalid Native Object");
+	if (argc == 1) {
+		cocos2d::Action* arg0;
+		do {
+			if (args.get(0).isNull()) { arg0 = nullptr; break; }
+			if (!args.get(0).isObject()) { ok = false; break; }
+			js_proxy_t *jsProxy;
+			JSObject *tmpObj = args.get(0).toObjectOrNull();
+			jsProxy = jsb_get_js_proxy(tmpObj);
+			arg0 = (cocos2d::Action*)(jsProxy ? jsProxy->ptr : NULL);
+			JSB_PRECONDITION2(arg0, cx, false, "Invalid Native Object");
+		} while (0);
+		JSB_PRECONDITION2(ok, cx, false, "js_cocos2dx_Node_runAction : Error processing arguments");
+		cocos2d::Action* ret = cobj->runAction(arg0);
+		jsval jsret = JSVAL_NULL;
+		do {
+			if (ret) {
+				js_proxy_t *jsProxy = js_get_or_create_proxy<cocos2d::Action>(cx, (cocos2d::Action*)ret);
+				jsret = OBJECT_TO_JSVAL(jsProxy->obj);
+			}
+			else {
+				jsret = JSVAL_NULL;
+			}
+		} while (0);
+		args.rval().set(jsret);
+		return true;
+	}
+
+	JS_ReportError(cx, "js_sj_SpriteWithHue_runAction : wrong number of arguments: %d, was expecting %d", argc, 1);
 	return false;
 }
 
@@ -348,17 +411,19 @@ void js_register_sj_SpriteWithHue(JSContext *cx, JS::HandleObject global) {
 	static JSFunctionSpec funcs[] = {
 		JS_FN("setPosition", js_sj_SpriteWithHue_setPosition, 2, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FN("setHue", js_sj_SpriteWithHue_setHue, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("runAction", js_sj_SpriteWithHue_runAction, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FS_END
 	};
 
 	static JSFunctionSpec st_funcs[] = {
 		JS_FN("create", js_sj_SpriteWithHue_create, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
+		JS_FN("createWithSpriteFrameName", js_sj_SpriteWithHue_createWithSpriteFrameName, 1, JSPROP_PERMANENT | JSPROP_ENUMERATE),
 		JS_FS_END
 	};
 
 	jsb_sj_SpriteWithHue_prototype = JS_InitClass(
 		cx, global,
-		JS::NullPtr(), // parent proto
+		JS::NullPtr(), // parent proto				
 		jsb_sj_SpriteWithHue_class,
 		jsb_sj_SpriteWithHue_constructor, 0, // constructor
 		properties,
@@ -383,7 +448,6 @@ void js_register_sj_SpriteWithHue(JSContext *cx, JS::HandleObject global) {
 		_js_global_type_map.insert(std::make_pair(typeName, p));
 	}
 }
-
 
 void register_all_sj(JSContext* cx, JS::HandleObject obj) {
 	// Get the ns
